@@ -126,6 +126,97 @@ async function getChannels(res) {
       desc: 'Channel pertarungan internasional'
     },
     {
+      name: '⚽ beIN SPORTS XTRA — 1080p',
+      url: 'https://bein-xtra-bein.amagi.tv/playlist.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: '⭐ beIN Sports gratis — La Liga, Serie A, berita bola!'
+    },
+    {
+      name: '⚽ beIN XTRA Español — 1080p',
+      url: 'https://dc1644a9jazgj.cloudfront.net/beIN_Sports_Xtra_Espanol.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: 'beIN Sports gratis — Bahasa Spanyol'
+    },
+    {
+      name: '🏀 ESPN8 The Ocho — 1080p',
+      url: 'https://d3b6q2ou5kp8ke.cloudfront.net/ESPNTheOcho.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: '⭐ ESPN channel gratis — olahraga alternatif'
+    },
+    {
+      name: '🥊 DAZN Combat — 1080p',
+      url: 'https://dazn-combat-rakuten.amagi.tv/hls/amagi_hls_data_rakutenAA-dazn-combat-rakuten/CDN/master.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: '⭐ DAZN gratis — boxing, MMA, combat sports'
+    },
+    {
+      name: '🌍 FIFA+ — Official FREE',
+      url: 'https://d2w9q46ikgrcwx.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-of5cbk3sav3w5/v1/sysdata_s_p_a_fifa_7/samsungheadend_us/latest/main/hls/playlist.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: '⭐ FIFA+ channel gratis — konten resmi Piala Dunia!'
+    },
+    {
+      name: '🥊 FITE 24/7 — 1080p',
+      url: 'https://d3d85c7qkywguj.cloudfront.net/scheduler/scheduleMaster/263.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: 'FITE gratis — wrestling, boxing, MMA'
+    },
+    {
+      name: '📺 fubo Sports Network — 1080p',
+      url: 'https://dnf08l6u6uxnz.cloudfront.net/master.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: '⭐ fuboTV gratis — berita olahraga & talk shows'
+    },
+    {
+      name: '⚽ Gol Classics — 1080p',
+      url: 'https://d71gqtnep83vb.cloudfront.net/gol_classics/gol_classics.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: 'Pertandingan bola klasik — La Liga, Premier League'
+    },
+    {
+      name: '🏎️ FloRacing 24/7 — 1080p',
+      url: 'https://amg02278-amg02278c1-flosports-worldwide-7592.playouts.now.amagi.tv/playlist.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: '⭐ FloSports gratis — motorsport, NASCAR, IndyCar'
+    },
+    {
+      name: '🏄 Fuel TV — 1080p',
+      url: 'https://amg01074-fueltv-fueltvau-samsungau-g09kq.amagi.tv/playlist/amg01074-fueltv-fueltvau-samsungau/playlist.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: 'Action sports — skateboard, surfing, moto'
+    },
+    {
+      name: '🇧🇷 CazéTV Brazil — Piala Dunia!',
+      url: 'https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: '⚡ Siaran SEMUA 104 pertandingan Piala Dunia 2026 GRATIS!'
+    },
+    {
+      name: '🏈 ACC Digital Network — 1080p',
+      url: 'https://raycom-accdn-firetv.amagi.tv/playlist.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: 'College sports — football, basketball, baseball'
+    },
+    {
+      name: '🇮🇳 DD Sports — 1080p (India)',
+      url: 'https://d3qs3d2rkhfqrt.cloudfront.net/out/v1/b17adfe543354fdd8d189b110617cddd/index.m3u8',
+      type: 'm3u8',
+      is_free: true,
+      desc: 'Channel olahraga India — cricket & multi-sport'
+    },
+    {
       name: '▶️ YouTube FIFA Highlights',
       url: 'https://www.youtube.com/@FIFAWorldCup',
       type: 'youtube',
