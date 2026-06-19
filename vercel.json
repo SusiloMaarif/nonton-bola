@@ -7,9 +7,5 @@
     "api/proxy.js": {
       "maxDuration": 30
     }
-  },
-  "routes": [
-    { "src": "/api/(.*)", "dest": "api/proxy.js?path=/api/$1" },
-    { "src": "/(.*)", "dest": "/$1" }
-  ]
+  }
 }
