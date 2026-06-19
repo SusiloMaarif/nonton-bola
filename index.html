@@ -173,12 +173,8 @@
 
     <div class="content">
         <div id="errorContainer"></div>
-        <div id="streamsContainer">
-            <div class="loading" id="loadingState">
-                <div class="spinner"></div>
-                <div>Mencari stream... 🔍</div>
-            </div>
-        </div>
+        <div id="channelsContainer" style="display:none"></div>
+        <div id="streamsContainer"></div>
     </div>
 
     <div class="footer">
@@ -188,6 +184,7 @@
     <script>
         // API lewat Vercel proxy sendiri
         const API_BASE = '/api/proxy';
+        let allChannels = [];
 
         let currentQuery = '';
         let loading = false;
@@ -200,15 +197,50 @@
                 });
                 if (resp.ok) {
                     el.innerHTML = '✅ <span class="ok">Scraper aktif</span>';
+                    // Load channels
+                    loadChannels();
                 } else {
                     el.innerHTML = '⚠️ <span class="err">API error</span>';
                 }
             } catch (e) {
-                el.innerHTML = 'ℹ️ <span class="ok">TVRI siap, search pake scraper publik</span>';
+                el.innerHTML = 'ℹ️ <span class="ok">TVRI siap, cari stream di bawah</span>';
                 console.error('API check:', e);
             }
         }
 
+        async function loadChannels() {
+            try {
+                const resp = await fetch(API_BASE + '?endpoint=channels');
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (data.status !== 'ok' || !data.channels) return;
+                allChannels = data.channels;
+                
+                const container = document.getElementById('channelsContainer');
+                let html = '<h3 style="margin:20px 0 10px 0;color:#e94560;font-size:16px">📡 Channel Streaming Tersedia</h3>';
+                html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
+                
+                for (const ch of data.channels) {
+                    const badgeClass = ch.type === 'direct' ? 'badge-direct' : ch.type === 'iframe' ? 'badge-iframe' : ch.type === 'youtube' ? 'badge-youtube' : 'badge-web';
+                    const badgeText = ch.type === 'direct' ? 'LANGSUNG' : ch.type === 'iframe' ? 'EMBED' : ch.type === 'youtube' ? 'YOUTUBE' : 'WEB';
+                    const watchUrl = '/watch.html?url=' + encodeURIComponent(ch.url) + '&name=' + encodeURIComponent(ch.name) + '&type=' + ch.type;
+                    
+                    html += '<div class="stream-card" onclick="window.location.href=\'' + watchUrl + '\'" style="background:#0f3460;border-color:#e94560">';
+                    html += '<span class="badge ' + badgeClass + '">' + badgeText + '</span>';
+                    html += '<div class="name">' + escapeHtml(ch.name) + '</div>';
+                    html += '<div class="meta">' + (ch.desc || '') + (ch.is_free ? ' · ✅ Gratis' : '') + (ch.is_indonesia ? ' · 🇮🇩' : '') + '</div>';
+                    html += '<button class="play-btn">▶ Nonton</button></div>';
+                }
+                
+                html += '</div>';
+                container.innerHTML = html;
+                container.style.display = 'block';
+            } catch (e) {
+                console.error('Load channels error:', e);
+            }
+        }
+
+        // Load on page ready
         window.addEventListener('DOMContentLoaded', () => {
             checkAPI();
             if (window.location.hash) {
