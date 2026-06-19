@@ -1,0 +1,16 @@
+{
+  "name": "nonton-bola",
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "functions": {
+    "api/proxy.js": {
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "api/proxy.js?path=/api/$1" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}
