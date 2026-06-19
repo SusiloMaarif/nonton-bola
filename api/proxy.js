@@ -48,14 +48,6 @@ async function getChannels(res) {
   // Kurasi channel sport yang paling likely nongol pas World Cup
   const channels = [
     {
-      name: '📺 TVRI Nasional',
-      url: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8',
-      type: 'm3u8',
-      is_free: true,
-      is_indonesia: true,
-      desc: 'Siaran resmi Piala Dunia 2026 — GRATIS & LEGAL'
-    },
-    {
       name: '📺 TVRI Nasional — 1080p',
       url: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8',
       type: 'm3u8',
