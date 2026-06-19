@@ -1,7 +1,6 @@
 {
   "name": "nonton-bola",
   "version": 2,
-  "public": true,
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
