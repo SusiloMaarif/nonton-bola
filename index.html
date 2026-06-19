@@ -27,19 +27,22 @@
         }
         .header h1 { font-size: 24px; font-weight: 900; }
         .header h1 span { color: #e94560; }
-        .header .nav-links { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .header .nav-links a {
+        .header .nav-links { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .header .nav-links a, .header .nav-links button {
             padding: 6px 16px;
             border-radius: 20px;
             font-size: 13px;
             font-weight: 700;
             text-decoration: none;
+            border: none;
+            cursor: pointer;
             transition: 0.2s;
+            font-family: inherit;
         }
-        .header .nav-links a.tvri-btn { background: #e94560; color: #fff; }
-        .header .nav-links a.tvri-btn:hover { background: #c73650; }
-        .header .nav-links a.nav-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333; }
-        .header .nav-links a.nav-btn:hover { border-color: #e94560; color: #fff; }
+        .header .nav-links a.tvri-btn, .header .nav-links button.tvri-btn { background: #e94560; color: #fff; }
+        .header .nav-links a.tvri-btn:hover, .header .nav-links button.tvri-btn:hover { background: #c73650; }
+        .header .nav-links a.nav-btn, .header .nav-links button.nav-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333; }
+        .header .nav-links a.nav-btn:hover, .header .nav-links button.nav-btn:hover { border-color: #e94560; color: #fff; }
         .status-badge { background: #00b894; color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; animation: pulse 2s infinite; }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
         .search-section { padding: 20px 30px 10px; max-width: 900px; margin: 0 auto; }
@@ -55,7 +58,6 @@
         }
         .search-box button:hover { background: #c73650; }
         .search-hint { margin-top: 8px; font-size: 13px; color: #666; }
-        .search-hint kbd { background: #1a1a2e; padding: 2px 8px; border-radius: 4px; font-size: 12px; border: 1px solid #333; }
         .quick-search { padding: 8px 30px; max-width: 900px; margin: 0 auto; }
         .quick-search .tags { display: flex; flex-wrap: wrap; gap: 8px; }
         .quick-search .tag {
@@ -79,6 +81,74 @@
             border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; text-decoration: none; transition: 0.2s;
         }
         .hero-tvri .watch-btn:hover { background: #c73650; transform: translateY(-2px); }
+        
+        /* Section styling */
+        .section-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #e94560;
+            margin: 24px 30px 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #1a1a2e;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .section-title span { color: #888; font-size: 13px; font-weight: 400; }
+
+        .channels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            padding: 0 30px;
+            max-width: 1200px;
+            margin: 0 auto 30px;
+        }
+        .channel-card {
+            background: linear-gradient(135deg, #12121f 0%, #1a1a2e 100%);
+            border: 1px solid #1e1e3a;
+            border-radius: 14px;
+            padding: 18px;
+            transition: 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .channel-card:hover {
+            border-color: #e94560;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(233,69,96,0.15);
+        }
+        .channel-card .ch-icon { font-size: 32px; margin-bottom: 8px; }
+        .channel-card .ch-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .channel-card .ch-desc { font-size: 12px; color: #888; line-height: 1.4; }
+        .channel-card .ch-badges { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+        .channel-card .ch-badge {
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .ch-badge-free { background: #00b89420; color: #00b894; border: 1px solid #00b89440; }
+        .ch-badge-id { background: #e9456020; color: #e94560; border: 1px solid #e9456040; }
+        .ch-badge-hd { background: #0984e320; color: #0984e3; border: 1px solid #0984e340; }
+        .channel-card .play-indicator {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            background: #e94560;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            opacity: 0;
+            transition: 0.3s;
+        }
+        .channel-card:hover .play-indicator { opacity: 1; }
+
         .content { padding: 10px 30px; max-width: 1200px; margin: 0 auto; }
         .streams-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
         .stream-card {
@@ -88,10 +158,6 @@
         .stream-card:hover { border-color: #e94560; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(233,69,96,0.12); }
         .stream-card .badge { position: absolute; top: 10px; right: 10px; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .badge-m3u8 { background: #00b894; color: #fff; }
-        .badge-iframe { background: #0984e3; color: #fff; }
-        .badge-web { background: #6c5ce7; color: #fff; }
-        .badge-direct { background: #e94560; color: #fff; }
-        .badge-youtube { background: #ff0000; color: #fff; }
         .stream-card .name { font-size: 15px; font-weight: 700; margin-bottom: 4px; padding-right: 70px; line-height: 1.3; }
         .stream-card .meta { font-size: 12px; color: #888; }
         .stream-card .meta .source { color: #e94560; }
@@ -115,6 +181,8 @@
             .streams-grid { grid-template-columns: 1fr; } .search-box { flex-direction: column; }
             .hero-tvri { margin: 10px 14px; padding: 18px; flex-direction: column; text-align: center; }
             .status-bar { flex-direction: column; align-items: center; gap: 4px; padding: 6px 14px; }
+            .channels-grid { padding: 0 14px; grid-template-columns: 1fr; }
+            .section-title { margin-left: 14px; margin-right: 14px; }
         }
     </style>
 </head>
@@ -125,8 +193,8 @@
             <div style="font-size:12px;color:#888">Streaming bola gratis — Piala Dunia 2026</div>
         </div>
         <div class="nav-links">
-            <a href="/tvri" class="tvri-btn">📺 TVRI LIVE</a>
-            <a href="javascript:void(0)" onclick="searchStreams()" class="nav-btn">🔄 Refresh</a>
+            <a href="watch.html?type=m3u8&url=https%3A%2F%2Fott-balancer.tvri.go.id%2Flive%2Feds%2FNasional%2Fhls%2FNasional.m3u8&name=TVRI+Nasional" class="tvri-btn">📺 TVRI LIVE</a>
+            <button onclick="searchStreams()" class="nav-btn">🔄 Refresh</button>
             <span class="status-badge">🔴 SIARAN</span>
         </div>
     </div>
@@ -134,16 +202,16 @@
     <div class="hero-tvri">
         <div class="info">
             <h2>📺 TVRI — Piala Dunia 2026 GRATIS!</h2>
-            <p>Siaran resmi 104 pertandingan Piala Dunia 2026 di Indonesia.</p>
+            <p>Siaran resmi 104 pertandingan Piala Dunia 2026 di Indonesia. Klik langsung nonton!</p>
             <span class="badge-free">✅ LEGAL & GRATIS</span>
             <span class="badge-free" style="background:#0984e3;margin-left:6px">🇮🇩 INDONESIA</span>
         </div>
-        <a href="/tvri" class="watch-btn">▶ Nonton TVRI Langsung</a>
+        <a href="watch.html?type=m3u8&url=https%3A%2F%2Fott-balancer.tvri.go.id%2Flive%2Feds%2FNasional%2Fhls%2FNasional.m3u8&name=TVRI+Nasional" class="watch-btn">▶ Nonton TVRI Langsung</a>
     </div>
 
     <div class="search-section">
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Cari pertandingan... (contoh: argentina, world cup, inggris)" autofocus>
+            <input type="text" id="searchInput" placeholder="Cari channel sport... (contoh: tvri, alkass, pluto, argentina)" autofocus>
             <button onclick="searchStreams()">🔍 Cari</button>
         </div>
         <div class="search-hint">
@@ -153,102 +221,116 @@
 
     <div class="quick-search">
         <div class="tags">
-            <span class="tag" onclick="quickSearch('world cup')">🏆 Piala Dunia 2026</span>
-            <span class="tag" onclick="quickSearch('argentina')">🇦🇷 Argentina</span>
-            <span class="tag" onclick="quickSearch('brazil')">🇧🇷 Brazil</span>
-            <span class="tag" onclick="quickSearch('prancis')">🇫🇷 Prancis</span>
-            <span class="tag" onclick="quickSearch('spanyol')">🇪🇸 Spanyol</span>
-            <span class="tag" onclick="quickSearch('jerman')">🇩🇪 Jerman</span>
-            <span class="tag" onclick="quickSearch('inggris')">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inggris</span>
-            <span class="tag" onclick="quickSearch('belanda')">🇳🇱 Belanda</span>
+            <span class="tag" onclick="quickSearch('world cup')">🏆 Piala Dunia</span>
+            <span class="tag" onclick="quickSearch('soccer')">⚽ Soccer</span>
             <span class="tag" onclick="quickSearch('tvri')">📺 TVRI</span>
-            <span class="tag" onclick="quickSearch('')">📋 Semua</span>
+            <span class="tag" onclick="quickSearch('indonesia')">🇮🇩 Indonesia</span>
+            <span class="tag" onclick="quickSearch('alkass')">🇶🇦 Alkass</span>
+            <span class="tag" onclick="quickSearch('pluto')">📡 Pluto TV</span>
+            <span class="tag" onclick="quickSearch('boxing')">🥊 Boxing</span>
+            <span class="tag" onclick="quickSearch('basketball')">🏀 Basketball</span>
+            <span class="tag" onclick="quickSearch('tennis')">🎾 Tennis</span>
+            <span class="tag" onclick="quickSearch('football')">🏈 Football</span>
+            <span class="tag" onclick="quickSearch('motorsport')">🏎️ Motorsport</span>
         </div>
     </div>
 
     <div class="status-bar">
-        <span><span class="live-dot"></span> <span id="streamCount">0</span> stream ditemukan</span>
+        <span><span class="live-dot"></span> <span id="streamCount">0</span> channel tersedia</span>
         <span>⚡ <span id="updateTime">-</span></span>
     </div>
 
+    <!-- Channel Section (dari API) -->
+    <div class="section-title">📡 Channel Langsung <span>— klik langsung puter</span></div>
+    <div class="channels-grid" id="channelsGrid"></div>
+
+    <!-- Search Results -->
     <div class="content">
         <div id="errorContainer"></div>
-        <div id="channelsContainer" style="display:none"></div>
         <div id="streamsContainer"></div>
     </div>
 
     <div class="footer">
         ⚽ NONTON BOLA — Streaming Piala Dunia 2026 gratis Indonesia 🏆
+        <div style="font-size:11px;color:#555;margin-top:4px">Channel dari iptv-org & Free-TV — public domain M3U8 playlist</div>
     </div>
 
     <script>
-        // API lewat Vercel proxy sendiri
         const API_BASE = '/api/proxy';
-        let allChannels = [];
-
         let currentQuery = '';
         let loading = false;
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function watchChannel(url, name, type) {
+            const params = new URLSearchParams({
+                url: url,
+                name: name,
+                type: type || 'm3u8'
+            });
+            window.location.href = 'watch.html?' + params.toString();
+        }
 
         async function checkAPI() {
             const el = document.getElementById('apiStatus');
             try {
-                const resp = await fetch(API_BASE + '?endpoint=matches&q=test', {
-                    signal: AbortSignal.timeout(10000)
+                await fetch(API_BASE + '?endpoint=channels', {
+                    signal: AbortSignal.timeout(8000)
                 });
-                if (resp.ok) {
-                    el.innerHTML = '✅ <span class="ok">Scraper aktif</span>';
-                    // Load channels
-                    loadChannels();
-                } else {
-                    el.innerHTML = '⚠️ <span class="err">API error</span>';
-                }
+                el.innerHTML = '✅ <span class="ok">API aktif</span>';
             } catch (e) {
-                el.innerHTML = 'ℹ️ <span class="ok">TVRI siap, cari stream di bawah</span>';
-                console.error('API check:', e);
+                el.innerHTML = 'ℹ️ <span class="ok">Mode offline — channel built-in siap</span>';
             }
+            
+            // Load channels regardless
+            loadChannelsFromAPI();
+            searchStreams();
         }
 
-        async function loadChannels() {
+        async function loadChannelsFromAPI() {
             try {
                 const resp = await fetch(API_BASE + '?endpoint=channels');
                 if (!resp.ok) return;
                 const data = await resp.json();
                 if (data.status !== 'ok' || !data.channels) return;
-                allChannels = data.channels;
-                
-                const container = document.getElementById('channelsContainer');
-                let html = '<h3 style="margin:20px 0 10px 0;color:#e94560;font-size:16px">📡 Channel Streaming Tersedia</h3>';
-                html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
+
+                const grid = document.getElementById('channelsGrid');
+                let html = '';
                 
                 for (const ch of data.channels) {
-                    const badgeClass = ch.type === 'direct' ? 'badge-direct' : ch.type === 'iframe' ? 'badge-iframe' : ch.type === 'youtube' ? 'badge-youtube' : 'badge-web';
-                    const badgeText = ch.type === 'direct' ? 'LANGSUNG' : ch.type === 'iframe' ? 'EMBED' : ch.type === 'youtube' ? 'YOUTUBE' : 'WEB';
-                    // Channel langsung buka di tab baru biar gak kena blokir embed
-                    const onClick = "window.open('" + ch.url.replace(/'/g, "\\'") + "','_blank')";
+                    const badges = [];
+                    if (ch.is_free) badges.push('<span class="ch-badge ch-badge-free">✅ Gratis</span>');
+                    if (ch.is_indonesia) badges.push('<span class="ch-badge ch-badge-id">🇮🇩 ID</span>');
                     
-                    html += '<div class="stream-card" onclick="' + onClick + '" style="background:#0f3460;border-color:#e94560;cursor:pointer">';
-                    html += '<span class="badge ' + badgeClass + '">' + badgeText + '</span>';
-                    html += '<div class="name">' + escapeHtml(ch.name) + '</div>';
-                    html += '<div class="meta">' + (ch.desc || '') + (ch.is_free ? ' · ✅ Gratis' : '') + (ch.is_indonesia ? ' · 🇮🇩' : '') + '</div>';
-                    html += '<button class="play-btn">▶ Buka di Tab Baru</button></div>';
+                    html += '<div class="channel-card" onclick="watchChannel(\'' + 
+                        ch.url.replace(/'/g, "\\'") + '\', \'' + 
+                        escapeHtml(ch.name).replace(/'/g, "\\'") + '\', \'' +
+                        (ch.type || 'm3u8') + '\')">';
+                    html += '<div class="ch-icon">' + (ch.name.match(/^([^\w]*\p{Emoji})/u)?.[0] || '📺') + '</div>';
+                    html += '<div class="ch-name">' + escapeHtml(ch.name.replace(/^[^\w]*\p{Emoji}\s*/u, '')) + '</div>';
+                    html += '<div class="ch-desc">' + escapeHtml(ch.desc || '') + '</div>';
+                    html += '<div class="ch-badges">' + badges.join('') + '</div>';
+                    html += '<div class="play-indicator">▶</div>';
+                    html += '</div>';
                 }
                 
-                html += '</div>';
-                container.innerHTML = html;
-                container.style.display = 'block';
+                grid.innerHTML = html;
+                document.getElementById('streamCount').textContent = data.count;
+                document.getElementById('updateTime').textContent = 'Online';
             } catch (e) {
                 console.error('Load channels error:', e);
             }
         }
 
-        // Load on page ready
         window.addEventListener('DOMContentLoaded', () => {
             checkAPI();
             if (window.location.hash) {
                 const q = decodeURIComponent(window.location.hash.substring(1));
                 document.getElementById('searchInput').value = q;
-                searchStreams();
-            } else {
                 searchStreams();
             }
         });
@@ -257,9 +339,12 @@
             if (e.key === 'Enter') searchStreams();
         });
 
-        function quickSearch(q) { document.getElementById('searchInput').value = q; searchStreams(); }
+        function quickSearch(q) { 
+            document.getElementById('searchInput').value = q; 
+            searchStreams(); 
+        }
 
-        async function searchStreams(silent = false) {
+        async function searchStreams() {
             const query = document.getElementById('searchInput').value.trim();
             currentQuery = query;
             if (loading) return;
@@ -269,72 +354,46 @@
             const errorContainer = document.getElementById('errorContainer');
             errorContainer.innerHTML = '';
 
-            if (!silent) {
-                container.innerHTML = `<div class="loading"><div class="spinner"></div><div>Mencari stream${query ? ': "'+query+'"' : '...'} 🔍</div></div>`;
-            }
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><div>Mencari channel...</div></div>';
 
             try {
-                const resp = await fetch(API_BASE + '?endpoint=matches&q=' + encodeURIComponent(query));
+                const resp = await fetch(API_BASE + '?endpoint=sports&q=' + encodeURIComponent(query));
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 const data = await resp.json();
 
-                if (data.status === 'error') throw new Error(data.message || 'Server error');
-
-                const streams = data.matches || [];
-                document.getElementById('streamCount').textContent = streams.length;
+                document.getElementById('streamCount').textContent = data.count;
                 document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('id-ID');
-                if (query) window.location.hash = encodeURIComponent(query);
 
-                if (streams.length === 0) {
-                    container.innerHTML = `
-                        <div class="no-results" id="noResults">
-                            <div class="emoji">⚽</div>
-                            <h3>Tidak ada stream "${escapeHtml(query)}"</h3>
-                            <p>Coba kata kunci lain. Atau tonton TVRI langsung!</p>
-                            <div style="margin-top:16px">
-                                <a href="/tvri" style="display:inline-block;padding:12px 28px;background:#e94560;color:#fff;border-radius:10px;text-decoration:none;font-weight:700">📺 Nonton TVRI GRATIS</a>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    let html = '<div class="streams-grid">';
-                    streams.forEach((s) => {
-                        const badgeClass = s.is_direct ? 'badge-direct' : s.type === 'm3u8' ? 'badge-m3u8' : s.type === 'iframe' ? 'badge-iframe' : s.type === 'youtube' ? 'badge-youtube' : 'badge-web';
-                        const badgeText = s.is_direct ? 'LANGSUNG' : s.type === 'm3u8' ? 'M3U8' : s.type === 'iframe' ? 'EMBED' : s.type === 'youtube' ? 'YOUTUBE' : 'LINK';
-                        const watchUrl = '/watch.html?url=' + encodeURIComponent(s.url) + '&name=' + encodeURIComponent(s.name) + '&type=' + (s.type || 'web');
-                        html += `
-                            <div class="stream-card" onclick="window.location.href='${watchUrl}'">
-                                <span class="badge ${badgeClass}">${badgeText}</span>
-                                <div class="name">${escapeHtml(s.name)}</div>
-                                <div class="meta">Sumber: <span class="source">${escapeHtml(s.source)}</span>${s.is_free ? ' · ✅ Gratis' : ''}</div>
-                                <button class="play-btn">▶ Nonton</button>
-                            </div>
-                        `;
-                    });
+                if (data.count === 0) {
+                    container.innerHTML = '<div class="no-results"><div class="emoji">🏟️</div><div>Tidak ada channel untuk "' + escapeHtml(query) + '"</div></div>';
+                    loading = false;
+                    return;
+                }
+
+                let html = '<div class="streams-grid">';
+                for (const ch of data.channels) {
+                    const encodedUrl = encodeURIComponent(ch.url);
+                    const encodedName = encodeURIComponent(ch.name);
+                    const groupDisplay = ch.group ? ch.group.replace('Sports', '') : '';
+                    
+                    html += '<div class="stream-card" onclick="watchChannel(\'' + 
+                        ch.url.replace(/'/g, "\\'") + '\', \'' + 
+                        escapeHtml(ch.name).replace(/'/g, "\\'") + '\')">';
+                    html += '<span class="badge badge-m3u8">📡 LIVE</span>';
+                    html += '<div class="name">' + escapeHtml(ch.name) + '</div>';
+                    html += '<div class="meta">' + escapeHtml(groupDisplay || 'Sports') + ' · ' + escapeHtml(ch.source || 'iptv-org') + '</div>';
+                    html += '<button class="play-btn">▶ Nonton Langsung</button>';
                     html += '</div>';
-                    container.innerHTML = html;
                 }
-            } catch (err) {
-                console.error(err);
-                errorContainer.innerHTML = `<div class="error-bar">❌ ${escapeHtml(err.message)}</div>`;
-                if (!silent) {
-                    container.innerHTML = `
-                        <div class="no-results">
-                            <div class="emoji">😵</div>
-                            <h3>Gagal ambil data</h3>
-                            <p>${escapeHtml(err.message)}</p>
-                            <p>Tapi TVRI tetep bisa ditonton! 🎉</p>
-                            <div style="margin-top:16px">
-                                <a href="/tvri" style="display:inline-block;padding:12px 28px;background:#e94560;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;margin:4px">📺 Nonton TVRI</a>
-                                <button onclick="searchStreams()" style="padding:12px 28px;background:transparent;border:2px solid #e94560;color:#e94560;border-radius:10px;cursor:pointer;font-weight:700;margin:4px">🔄 Coba Lagi</button>
-                            </div>
-                        </div>
-                    `;
-                }
-            } finally { loading = false; }
-        }
+                html += '</div>';
+                container.innerHTML = html;
+            } catch (e) {
+                errorContainer.innerHTML = '<div class="error-bar">⚠️ Gagal load: ' + escapeHtml(e.message) + '</div>';
+                container.innerHTML = '<div class="no-results"><div class="emoji">⚽</div><div>Coba klik channel di atas, Bos!</div></div>';
+            }
 
-        function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
+            loading = false;
+        }
     </script>
 </body>
 </html>

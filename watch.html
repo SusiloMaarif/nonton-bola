@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nonton — Streaming Bola</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
@@ -11,9 +12,17 @@
         .top-bar a { color: #e94560; text-decoration: none; font-weight: 700; font-size: 14px; }
         .top-bar a:hover { text-decoration: underline; }
         .top-bar .title { font-size: 14px; color: #888; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .top-bar .channel-actions { display: flex; gap: 8px; }
+        .top-bar .channel-actions a, .top-bar .channel-actions button {
+            padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; text-decoration: none; font-family: inherit;
+        }
+        .top-bar .open-btn { background: #e94560; color: #fff; }
+        .top-bar .home-btn { background: #1a1a2e; color: #aaa; border: 1px solid #333 !important; }
+        
         .player-container { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; position: relative; min-height: 60vh; }
+        .player-container video { width: 100%; max-height: 85vh; background: #000; outline: none; max-width: 100%; }
         .player-container iframe { width: 100%; height: 100vh; border: none; position: absolute; top: 0; left: 0; }
-        .player-container video { width: 100%; max-height: 85vh; background: #000; outline: none; }
+        
         .player-fallback { text-align: center; padding: 40px 20px; color: #888; max-width: 700px; margin: 0 auto; }
         .player-fallback .big-icon { font-size: 64px; margin-bottom: 20px; }
         .player-fallback h3 { color: #fff; margin-bottom: 10px; font-size: 20px; }
@@ -22,43 +31,81 @@
         .player-fallback .stream-url a { color: #e94560; }
         .player-fallback .btn { display: inline-block; padding: 12px 28px; background: #e94560; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 700; margin: 4px; }
         .player-fallback .btn-outline { display: inline-block; padding: 12px 28px; background: transparent; border: 2px solid #e94560; color: #e94560; text-decoration: none; border-radius: 8px; font-weight: 700; margin: 4px; }
+
+        .player-status { 
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 700;
+            transition: 0.3s; pointer-events: none; white-space: nowrap;
+        }
+        .player-status.loading { background: #e94560; color: #fff; }
+        .player-status.playing { background: #00b894; color: #fff; }
+        .player-status.error { background: #d63031; color: #fff; }
+        
         .info-bar { background: #0a0a0f; padding: 16px 20px; border-top: 1px solid #1a1a2e; font-size: 13px; color: #666; text-align: center; }
-        @media (max-width: 600px) { .player-container iframe { height: 50vh; position: relative; } .top-bar .title { max-width: 50%; } }
+        .info-bar a { color: #e94560; }
+        
+        .loading-spinner { display: inline-block; width: 48px; height: 48px; border: 4px solid #1a1a2e; border-top: 4px solid #e94560; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        @media (max-width: 600px) { 
+            .player-container video { max-height: 50vh; } 
+            .top-bar .title { max-width: 50%; } 
+            .player-status { bottom: 10px; font-size: 10px; padding: 5px 14px; }
+        }
     </style>
 </head>
 <body>
     <div class="top-bar">
         <a href="javascript:history.back()">← Kembali</a>
         <div class="title" id="streamTitle">Loading...</div>
-        <a href="/">🏠</a>
+        <div class="channel-actions">
+            <button class="open-btn" id="openBtn" onclick="openDirect()">↗ Buka</button>
+            <a href="/" class="home-btn">🏠</a>
+        </div>
     </div>
     <div class="player-container" id="playerContainer">
         <div class="player-fallback" id="fallback">
-            <div class="big-icon">⚽</div>
+            <div class="loading-spinner"></div>
             <h3>Memuat player...</h3>
+            <p>Menyiapkan stream untuk diputar</p>
         </div>
+        <div class="player-status loading" id="playerStatus">⏳ Menyiapkan...</div>
     </div>
-    <div class="info-bar">⚡ Kalo gak bisa diputer, buka aja di tab baru. <a href="/" style="color:#e94560">Cari stream lain →</a></div>
+    <div class="info-bar">
+        ⚡ Stream langsung dari server resmi. <a href="/">Cari channel lain →</a>
+        <span style="display:block;font-size:11px;margin-top:4px" id="debugInfo"></span>
+    </div>
 
     <script>
         const params = new URLSearchParams(window.location.search);
         const streamUrl = params.get('url') || '';
         const streamName = params.get('name') || 'Stream';
-        let streamType = params.get('type') || 'web';
+        let streamType = params.get('type') || 'm3u8';
         
-        document.title = streamName + ' — Nonton Bola';
-        document.getElementById('streamTitle').textContent = streamName;
+        const decodedUrl = decodeURIComponent(streamUrl);
+        const decodedName = decodeURIComponent(streamName);
+        
+        document.title = decodedName + ' — Nonton Bola';
+        document.getElementById('streamTitle').textContent = decodedName;
         
         const container = document.getElementById('playerContainer');
         const fallback = document.getElementById('fallback');
-        const decodedUrl = decodeURIComponent(streamUrl);
-        
-        function openInNewTab() {
+        const status = document.getElementById('playerStatus');
+        const debugInfo = document.getElementById('debugInfo');
+        const openBtn = document.getElementById('openBtn');
+
+        function setStatus(text, cls) {
+            status.textContent = text;
+            status.className = 'player-status ' + (cls || 'loading');
+        }
+
+        function openDirect() {
             window.open(decodedUrl, '_blank');
         }
 
         function showFallback(icon, title, msg) {
             fallback.style.display = 'block';
+            status.style.display = 'none';
             fallback.innerHTML = `
                 <div class="big-icon">${icon}</div>
                 <h3>${title}</h3>
@@ -69,118 +116,202 @@
             `;
         }
 
-        if (!decodedUrl) {
-            showFallback('😵', 'URL kosong', 'Gak ada link stream.');
-        } else if (streamType === 'direct') {
-            // Redirect langsung ke websitenya
-            window.location.href = decodedUrl;
-        } else if (streamType === 'youtube') {
-            // Embed YouTube
-            fallback.style.display = 'none';
-            const iframe = document.createElement('iframe');
-            // Convert youtube.com to youtube-nocookie.com for better embedding
-            let embedUrl = decodedUrl;
-            if (embedUrl.includes('youtube.com/watch?v=')) {
-                const vidId = new URL(embedUrl).searchParams.get('v');
-                if (vidId) embedUrl = 'https://www.youtube-nocookie.com/embed/' + vidId;
-            } else if (embedUrl.includes('youtu.be/')) {
-                const vidId = embedUrl.split('youtu.be/')[1]?.split('?')[0];
-                if (vidId) embedUrl = 'https://www.youtube-nocookie.com/embed/' + vidId;
+        function initPlayer() {
+            if (!decodedUrl) {
+                showFallback('😵', 'URL kosong', 'Gak ada link stream.');
+                return;
             }
-            iframe.src = embedUrl;
-            iframe.allow = 'autoplay; encrypted-media; fullscreen';
-            iframe.allowFullscreen = true;
-            iframe.style.width = '100%';
-            iframe.style.height = '100vh';
-            container.appendChild(iframe);
-        } else if (streamType === 'iframe') {
-            // Coba embed, fallback kalo ditolak
-            fallback.style.display = 'none';
-            const iframe = document.createElement('iframe');
-            iframe.src = decodedUrl;
-            iframe.allow = 'autoplay; encrypted-media; fullscreen';
-            iframe.allowFullscreen = true;
-            iframe.style.width = '100%';
-            iframe.style.height = '100vh';
-            container.appendChild(iframe);
-            
-            // Deteksi kalo di-block X-Frame-Options
-            let blocked = false;
-            const checkBlock = setTimeout(() => {
-                try {
-                    // Coba akses contentDocument — kalo error berarti di-block
-                    if (iframe.contentDocument === null) { blocked = true; }
-                } catch(e) { blocked = true; }
-                if (blocked) {
-                    iframe.style.display = 'none';
-                    showFallback('🔗', 'Stream ini gak bisa di-embed', 
-                        'Website nya melarang embed. Tapi lo bisa buka langsung di tab baru:');
-                }
-            }, 3000);
-            
-            iframe.onload = () => { clearTimeout(checkBlock); };
-        } else if (streamType === 'm3u8') {
-            fallback.style.display = 'none';
-            const video = document.createElement('video');
-            video.controls = true;
-            video.autoplay = true;
-            video.playsInline = true;
-            video.style.width = '100%';
-            video.style.maxHeight = '85vh';
-            video.style.background = '#000';
-            container.appendChild(video);
-            
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
-            script.onload = () => {
-                if (Hls.isSupported()) {
-                    const hls = new Hls();
-                    hls.loadSource(decodedUrl);
-                    hls.attachMedia(video);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = decodedUrl;
-                } else {
-                    showFallback('⚠️', 'Browser gak support HLS', 'Buka pake VLC atau browser lain:');
-                }
-            };
-            script.onerror = () => { video.src = decodedUrl; };
-            document.head.appendChild(script);
-        } else if (decodedUrl.match(/\.(mp4|webm|ogg)(\?|$)/i)) {
-            // Video langsung
-            fallback.style.display = 'none';
-            const video = document.createElement('video');
-            video.controls = true;
-            video.autoplay = true;
-            video.playsInline = true;
-            video.style.width = '100%';
-            video.style.maxHeight = '85vh';
-            video.style.background = '#000';
-            video.src = decodedUrl;
-            container.appendChild(video);
-        } else {
-            // Web — coba embed
-            try {
-                fallback.style.display = 'none';
-                const iframe = document.createElement('iframe');
-                iframe.src = decodedUrl;
-                iframe.allow = 'autoplay; encrypted-media; fullscreen';
-                iframe.allowFullscreen = true;
-                iframe.style.width = '100%';
-                iframe.style.height = '100vh';
-                container.appendChild(iframe);
-                
-                const checkBlock = setTimeout(() => {
-                    try { if (iframe.contentDocument === null) {} } catch(e) {
-                        iframe.style.display = 'none';
-                        showFallback('🔗', 'Gak bisa di-embed', 'Buka langsung aja:');
-                    }
-                }, 3000);
-                iframe.onload = () => { clearTimeout(checkBlock); };
-            } catch(e) {
-                showFallback('🔗', 'Gagal', 'Buka langsung:');
+
+            debugInfo.textContent = 'Type: ' + streamType + ' | URL: ' + decodedUrl.substring(0, 80) + '...';
+
+            // M3U8 — play with hls.js
+            if (streamType === 'm3u8' || decodedUrl.match(/\.(m3u8|m3u)$/i)) {
+                playM3U8(decodedUrl);
+                return;
+            }
+
+            // YouTube — embed
+            if (streamType === 'youtube' || decodedUrl.includes('youtube.com') || decodedUrl.includes('youtu.be')) {
+                embedYouTube(decodedUrl);
+                return;
+            }
+
+            // Iframe — try embed
+            if (streamType === 'iframe') {
+                embedIframe(decodedUrl);
+                return;
+            }
+
+            // Direct — redirect
+            if (streamType === 'direct') {
+                window.location.href = decodedUrl;
+                return;
+            }
+
+            // Default: try M3U8 first, fallback to iframe
+            if (decodedUrl.match(/\.(m3u8|m3u)/i)) {
+                playM3U8(decodedUrl);
+            } else {
+                embedIframe(decodedUrl);
             }
         }
+
+        // ========= HLS.JS PLAYER =========
+        function playM3U8(url) {
+            setStatus('⏳ Menyiapkan stream...', 'loading');
+            
+            // Coba proxy dulu kalo direct gagal
+            tryPlayM3U8(url, false);
+        }
+
+        function tryPlayM3U8(url, useProxy) {
+            const video = document.createElement('video');
+            video.id = 'hlsVideo';
+            video.controls = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.style.width = '100%';
+            video.style.maxHeight = '85vh';
+            
+            // Kosongkan container
+            fallback.style.display = 'none';
+            const oldVideo = document.getElementById('hlsVideo');
+            if (oldVideo) oldVideo.remove();
+            const oldIframe = document.querySelector('iframe');
+            if (oldIframe) oldIframe.remove();
+            
+            container.appendChild(video);
+            const actualUrl = useProxy ? ('/api/proxy?endpoint=proxy-m3u8&url=' + encodeURIComponent(url)) : url;
+
+            if (Hls.isSupported()) {
+                const hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    fragLoadingMaxRetry: 5,
+                    manifestLoadingMaxRetry: 5,
+                    levelLoadingMaxRetry: 5,
+                });
+                
+                hls.loadSource(actualUrl);
+                hls.attachMedia(video);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    setStatus('▶ Siaran Langsung', 'playing');
+                    video.play().catch(function(e) {
+                        console.log('Autoplay blocked:', e);
+                        setStatus('🔇 Klik play untuk mulai', 'playing');
+                    });
+                });
+
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        console.error('HLS fatal error:', data);
+                        setStatus('❌ Error stream', 'error');
+                        
+                        if (!useProxy) {
+                            // Coba pake proxy
+                            console.log('Retry with CORS proxy...');
+                            setStatus('⏳ Coba via proxy...', 'loading');
+                            hls.destroy();
+                            tryPlayM3U8(url, true);
+                        } else {
+                            showFallback('😵', 'Gagal memuat stream', 
+                                'Stream ini mungkin sedang offline atau di-geoblock. Coba buka di tab baru.');
+                        }
+                    } else {
+                        console.log('HLS non-fatal:', data);
+                    }
+                });
+
+                // Update status periodically
+                hls.on(Hls.Events.FRAG_LOADED, function() {
+                    setStatus('▶ Siaran Langsung', 'playing');
+                });
+
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Native HLS (Safari)
+                video.src = actualUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    setStatus('▶ Siaran Langsung', 'playing');
+                    video.play().catch(function(){});
+                });
+            } else {
+                // HLS not supported, fallback
+                if (!useProxy) {
+                    tryPlayM3U8(url, true);
+                } else {
+                    showFallback('📺', 'Browser tidak support HLS', 
+                        'Coba buka pake VLC atau browser lain');
+                }
+            }
+        }
+
+        // ========= YOUTUBE EMBED =========
+        function embedYouTube(url) {
+            setStatus('⏳ Memuat YouTube...', 'loading');
+            let videoId = '';
+            
+            // Extract video ID from various YouTube URL formats
+            const patterns = [
+                /youtube\.com\/watch\?v=([^&]+)/,
+                /youtu\.be\/([^?]+)/,
+                /youtube\.com\/embed\/([^?]+)/,
+                /youtube\.com\/shorts\/([^?]+)/
+            ];
+            
+            for (const p of patterns) {
+                const m = url.match(p);
+                if (m) { videoId = m[1]; break; }
+            }
+
+            fallback.style.display = 'none';
+            
+            if (videoId) {
+                const iframe = document.createElement('iframe');
+                iframe.src = 'https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0';
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                container.appendChild(iframe);
+                setStatus('▶ YouTube', 'playing');
+            } else {
+                // Channel page, just redirect
+                showFallback('▶️', 'YouTube Channel', 'Buka langsung di YouTube');
+            }
+        }
+
+        // ========= IFRAME EMBED =========
+        function embedIframe(url) {
+            setStatus('⏳ Memuat embed...', 'loading');
+            
+            // Coba fetch dulu untuk detect if CORS allows
+            fetch(url, { method: 'HEAD', mode: 'no-cors' }).catch(function(){});
+            
+            fallback.style.display = 'none';
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = url;
+            iframe.allow = 'autoplay; fullscreen';
+            iframe.allowFullscreen = true;
+            iframe.sandbox = 'allow-scripts allow-same-origin allow-popups';
+            container.appendChild(iframe);
+            
+            // If iframe blocks after 5s, offer fallback
+            let blocked = true;
+            iframe.addEventListener('load', function() {
+                blocked = false;
+                setStatus('▶ Dimuat', 'playing');
+            });
+            
+            setTimeout(function() {
+                if (blocked) {
+                    showFallback('🚫', 'Situs ini memblokir embed', 
+                        'Beberapa situs streaming gak bisa di-embed. Buka aja langsung di tab baru.');
+                }
+            }, 5000);
+        }
+
+        // Start
+        initPlayer();
     </script>
 </body>
 </html>

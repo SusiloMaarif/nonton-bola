@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📺 TVRI Live — Piala Dunia 2026 | NONTON BOLA</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
@@ -11,42 +12,52 @@
         .top-bar a { color: #e94560; text-decoration: none; font-weight: 700; font-size: 14px; }
         .top-bar a:hover { text-decoration: underline; }
         .top-bar .title { font-size: 16px; font-weight: 700; color: #fff; }
-        .top-bar .badge-tvri { background: #e94560; color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-        .player-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; min-height: 70vh; }
-        .player-container iframe { width: 100%; flex: 1; border: none; min-height: 70vh; }
+        .top-bar .badge-tvri { background: #e94560; color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .player-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; min-height: 70vh; position: relative; }
+        .player-container video { width: 100%; max-height: 85vh; background: #000; outline: none; }
         .player-fallback { text-align: center; padding: 40px 20px; color: #888; }
         .player-fallback .big-icon { font-size: 64px; margin-bottom: 20px; }
         .player-fallback h3 { color: #fff; margin-bottom: 8px; }
         .player-fallback .links { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 16px; }
         .player-fallback .btn { display: inline-block; padding: 12px 28px; background: #e94560; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 700; }
         .player-fallback .btn-outline { display: inline-block; padding: 12px 28px; background: transparent; border: 2px solid #e94560; color: #e94560; text-decoration: none; border-radius: 8px; font-weight: 700; }
+        .player-status { 
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            padding: 8px 20px; border-radius: 20px; font-size: 12px; font-weight: 700;
+            transition: 0.3s; pointer-events: none;
+        }
+        .player-status.loading { background: #e94560; color: #fff; }
+        .player-status.playing { background: #00b894; color: #fff; }
+        .player-status.error { background: #d63031; color: #fff; }
         .info-section { background: #0a0a0f; padding: 20px; border-top: 1px solid #1a1a2e; }
         .info-section h3 { color: #e94560; margin-bottom: 8px; font-size: 16px; }
         .info-section p { color: #888; font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
         .info-section .tips { list-style: none; padding: 0; }
         .info-section .tips li { padding: 6px 0; padding-left: 20px; position: relative; font-size: 13px; color: #aaa; }
         .info-section .tips li::before { content: "✓"; position: absolute; left: 0; color: #00b894; font-weight: 700; }
-        @media (max-width: 600px) { .player-container iframe { min-height: 50vh; } .top-bar { padding: 10px 14px; } }
+        .loading-spinner { display: inline-block; width: 48px; height: 48px; border: 4px solid #1a1a2e; border-top: 4px solid #e94560; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 600px) { .player-container video { max-height: 50vh; } .top-bar { padding: 10px 14px; } }
     </style>
 </head>
 <body>
     <div class="top-bar">
         <a href="/">← Beranda</a>
         <div class="title">📺 TVRI — Piala Dunia 2026</div>
-        <span class="badge-tvri">🔴 LIVE</span>
+        <div style="display:flex;gap:6px">
+            <span class="badge-tvri">🔴 LIVE</span>
+            <a href="https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8" target="_blank" style="padding:4px 12px;border-radius:6px;font-size:12px;font-weight:700;background:#1a1a2e;color:#888;text-decoration:none;border:1px solid #333">↗ Buka</a>
+        </div>
     </div>
 
     <div class="player-container" id="playerContainer">
         <div class="player-fallback" id="fallback">
-            <div class="big-icon">📺</div>
+            <div class="loading-spinner"></div>
             <h3>Memutar TVRI...</h3>
             <p>Streaming resmi Piala Dunia 2026 — GRATIS & LEGAL</p>
-            <div class="links">
-                <a href="https://www.vidio.com/live/6441-tvri" target="_blank" class="btn">▶ Buka di Vidio</a>
-                <a href="https://tvri.go.id/live" target="_blank" class="btn-outline">🌐 TVRI Website</a>
-                <a href="/" class="btn-outline">← Cari Stream Lain</a>
-            </div>
         </div>
+        <div class="player-status loading" id="playerStatus">⏳ Menyiapkan TVRI...</div>
     </div>
 
     <div class="info-section">
@@ -54,28 +65,107 @@
         <p>TVRI adalah pemegang hak siar resmi Piala Dunia 2026 di Indonesia. Seluruh <strong>104 pertandingan</strong> dari fase grup hingga final bisa ditonton <strong>GRATIS</strong> tanpa langganan melalui:</p>
         <ul class="tips">
             <li>TVRI Nasional & TVRI Sport (siaran TV digital free-to-air)</li>
-            <li>Vidio.com/live/6441-tvri (streaming online)</li>
-            <li>Aplikasi Fola Play & MAXStream TV (Android/iOS)</li>
+            <li>Streaming langsung di sini (pake hls.js player)</li>
+            <li>Vidio.com/live/6441-tvri (alternatif)</li>
             <li>Sebagian pertandingan juga gratis di YouTube FIFA</li>
         </ul>
-        <p style="margin-top:12px;font-size:13px;color:#666">⚠️ Kalo embed di atas gak muncul, klik "Buka di Vidio".</p>
+        <p style="margin-top:12px;font-size:13px;color:#666">💡 Kalo player di atas gak muncul, klik tombol "↗ Buka" di pojok kanan.</p>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <a href="/watch.html?type=m3u8&url=https%3A%2F%2Fott-balancer.tvri.go.id%2Flive%2Feds%2FSportHD%2Fhls%2FSportHD.m3u8&name=TVRI+Sport+HD" class="btn" style="background:#0984e3;color:#fff;padding:8px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">📺 TVRI Sport HD</a>
+            <a href="/watch.html?type=m3u8&url=https%3A%2F%2Findihuy.streamized.net%2Fatm%2FDASH%2Fuseesport%2Fmanifest.mpd&name=MAX+Sports+Indonesia" class="btn-outline" style="padding:8px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">🇮🇩 MAX Sports</a>
+            <a href="/" class="btn-outline" style="padding:8px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px">← Cari Channel Lain</a>
+        </div>
     </div>
 
     <script>
+        const TVRI_URL = 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8';
         const container = document.getElementById('playerContainer');
         const fallback = document.getElementById('fallback');
-        
-        try {
-            const iframe = document.createElement('iframe');
-            iframe.src = 'https://www.vidio.com/live/6441-tvri?embed=';
-            iframe.allow = 'autoplay; encrypted-media; fullscreen';
-            iframe.allowFullscreen = true;
-            iframe.style.width = '100%';
-            iframe.style.minHeight = '70vh';
-            container.insertBefore(iframe, fallback);
-        } catch (e) {
-            console.error(e);
+        const status = document.getElementById('playerStatus');
+
+        function setStatus(text, cls) {
+            status.textContent = text;
+            status.className = 'player-status ' + (cls || 'loading');
         }
+
+        function initTVRI() {
+            const video = document.createElement('video');
+            video.id = 'tvriVideo';
+            video.controls = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.style.width = '100%';
+            video.style.maxHeight = '85vh';
+            
+            fallback.style.display = 'none';
+            container.appendChild(video);
+
+            const playUrl = TVRI_URL;
+
+            if (Hls.isSupported()) {
+                const hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                });
+                
+                hls.loadSource(playUrl);
+                hls.attachMedia(video);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    setStatus('🔴 TVRI LIVE', 'playing');
+                    video.play().catch(function(e) {
+                        console.log('Autoplay blocked:', e);
+                        setStatus('🔇 Klik play untuk mulai', 'playing');
+                    });
+                });
+
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    if (data.fatal) {
+                        console.error('HLS fatal:', data);
+                        setStatus('❌ Gagal', 'error');
+                        setTimeout(function() {
+                            fallback.style.display = 'block';
+                            status.style.display = 'none';
+                            fallback.innerHTML = `
+                                <div class="big-icon">📺</div>
+                                <h3>Gagal memuat TVRI</h3>
+                                <p>Coba buka langsung di situs resmi TVRI atau Vidio</p>
+                                <div class="links">
+                                    <a href="https://www.vidio.com/live/6441-tvri" target="_blank" class="btn">▶ Buka di Vidio</a>
+                                    <a href="https://tvri.go.id/live" target="_blank" class="btn-outline">🌐 TVRI Website</a>
+                                    <a href="/" class="btn-outline">← Kembali</a>
+                                </div>
+                            `;
+                        }, 2000);
+                    }
+                });
+
+                hls.on(Hls.Events.FRAG_LOADED, function() {
+                    setStatus('🔴 TVRI LIVE', 'playing');
+                });
+
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = playUrl;
+                video.addEventListener('loadedmetadata', function() {
+                    setStatus('🔴 TVRI LIVE', 'playing');
+                    video.play().catch(function(){});
+                });
+            } else {
+                fallback.style.display = 'block';
+                status.style.display = 'none';
+                fallback.innerHTML = `
+                    <div class="big-icon">📺</div>
+                    <h3>Browser tidak support HLS</h3>
+                    <p>Gunakan Chrome/Firefox/Edge atau buka langsung di Vidio</p>
+                    <div class="links">
+                        <a href="https://www.vidio.com/live/6441-tvri" target="_blank" class="btn">▶ Buka di Vidio</a>
+                        <a href="/" class="btn-outline">← Kembali</a>
+                    </div>
+                `;
+            }
+        }
+
+        initTVRI();
     </script>
 </body>
 </html>
