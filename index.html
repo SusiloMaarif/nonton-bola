@@ -223,13 +223,14 @@
                 for (const ch of data.channels) {
                     const badgeClass = ch.type === 'direct' ? 'badge-direct' : ch.type === 'iframe' ? 'badge-iframe' : ch.type === 'youtube' ? 'badge-youtube' : 'badge-web';
                     const badgeText = ch.type === 'direct' ? 'LANGSUNG' : ch.type === 'iframe' ? 'EMBED' : ch.type === 'youtube' ? 'YOUTUBE' : 'WEB';
-                    const watchUrl = '/watch.html?url=' + encodeURIComponent(ch.url) + '&name=' + encodeURIComponent(ch.name) + '&type=' + ch.type;
+                    // Channel langsung buka di tab baru biar gak kena blokir embed
+                    const onClick = "window.open('" + ch.url.replace(/'/g, "\\'") + "','_blank')";
                     
-                    html += '<div class="stream-card" onclick="window.location.href=\'' + watchUrl + '\'" style="background:#0f3460;border-color:#e94560">';
+                    html += '<div class="stream-card" onclick="' + onClick + '" style="background:#0f3460;border-color:#e94560;cursor:pointer">';
                     html += '<span class="badge ' + badgeClass + '">' + badgeText + '</span>';
                     html += '<div class="name">' + escapeHtml(ch.name) + '</div>';
                     html += '<div class="meta">' + (ch.desc || '') + (ch.is_free ? ' · ✅ Gratis' : '') + (ch.is_indonesia ? ' · 🇮🇩' : '') + '</div>';
-                    html += '<button class="play-btn">▶ Nonton</button></div>';
+                    html += '<button class="play-btn">▶ Buka di Tab Baru</button></div>';
                 }
                 
                 html += '</div>';

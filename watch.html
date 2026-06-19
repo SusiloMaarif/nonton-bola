@@ -14,9 +14,10 @@
         .player-container { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; position: relative; min-height: 60vh; }
         .player-container iframe { width: 100%; height: 100vh; border: none; position: absolute; top: 0; left: 0; }
         .player-container video { width: 100%; max-height: 85vh; background: #000; outline: none; }
-        .player-fallback { text-align: center; padding: 40px 20px; color: #888; }
+        .player-fallback { text-align: center; padding: 40px 20px; color: #888; max-width: 700px; margin: 0 auto; }
         .player-fallback .big-icon { font-size: 64px; margin-bottom: 20px; }
-        .player-fallback h3 { color: #fff; margin-bottom: 10px; }
+        .player-fallback h3 { color: #fff; margin-bottom: 10px; font-size: 20px; }
+        .player-fallback p { margin-bottom: 8px; color: #aaa; }
         .player-fallback .stream-url { background: #1a1a2e; padding: 12px 20px; border-radius: 8px; word-break: break-all; font-size: 13px; margin: 16px auto; max-width: 600px; border: 1px solid #333; }
         .player-fallback .stream-url a { color: #e94560; }
         .player-fallback .btn { display: inline-block; padding: 12px 28px; background: #e94560; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 700; margin: 4px; }
@@ -35,10 +36,9 @@
         <div class="player-fallback" id="fallback">
             <div class="big-icon">⚽</div>
             <h3>Memuat player...</h3>
-            <p>Silakan tunggu sebentar</p>
         </div>
     </div>
-    <div class="info-bar">⚡ Kalo stream mati, <a href="javascript:location.reload()" style="color:#e94560">refresh</a> atau cari link lain. <a href="/" style="color:#e94560">Cari stream lain →</a></div>
+    <div class="info-bar">⚡ Kalo gak bisa diputer, buka aja di tab baru. <a href="/" style="color:#e94560">Cari stream lain →</a></div>
 
     <script>
         const params = new URLSearchParams(window.location.search);
@@ -53,14 +53,48 @@
         const fallback = document.getElementById('fallback');
         const decodedUrl = decodeURIComponent(streamUrl);
         
-        function showFallback(msg) {
+        function openInNewTab() {
+            window.open(decodedUrl, '_blank');
+        }
+
+        function showFallback(icon, title, msg) {
             fallback.style.display = 'block';
-            fallback.innerHTML = msg;
+            fallback.innerHTML = `
+                <div class="big-icon">${icon}</div>
+                <h3>${title}</h3>
+                <p>${msg}</p>
+                <div class="stream-url"><a href="${decodedUrl}" target="_blank">${decodedUrl}</a></div>
+                <a href="${decodedUrl}" target="_blank" class="btn">▶ Buka di Tab Baru</a>
+                <a href="/" class="btn-outline">← Cari Lain</a>
+            `;
         }
 
         if (!decodedUrl) {
-            showFallback(`<div class="big-icon">😵</div><h3>URL stream kosong</h3><p>Gak ada link stream.</p><a href="/" class="btn">Cari Stream</a>`);
-        } else if (streamType === 'direct' || streamType === 'youtube' || streamType === 'iframe') {
+            showFallback('😵', 'URL kosong', 'Gak ada link stream.');
+        } else if (streamType === 'direct') {
+            // Redirect langsung ke websitenya
+            window.location.href = decodedUrl;
+        } else if (streamType === 'youtube') {
+            // Embed YouTube
+            fallback.style.display = 'none';
+            const iframe = document.createElement('iframe');
+            // Convert youtube.com to youtube-nocookie.com for better embedding
+            let embedUrl = decodedUrl;
+            if (embedUrl.includes('youtube.com/watch?v=')) {
+                const vidId = new URL(embedUrl).searchParams.get('v');
+                if (vidId) embedUrl = 'https://www.youtube-nocookie.com/embed/' + vidId;
+            } else if (embedUrl.includes('youtu.be/')) {
+                const vidId = embedUrl.split('youtu.be/')[1]?.split('?')[0];
+                if (vidId) embedUrl = 'https://www.youtube-nocookie.com/embed/' + vidId;
+            }
+            iframe.src = embedUrl;
+            iframe.allow = 'autoplay; encrypted-media; fullscreen';
+            iframe.allowFullscreen = true;
+            iframe.style.width = '100%';
+            iframe.style.height = '100vh';
+            container.appendChild(iframe);
+        } else if (streamType === 'iframe') {
+            // Coba embed, fallback kalo ditolak
             fallback.style.display = 'none';
             const iframe = document.createElement('iframe');
             iframe.src = decodedUrl;
@@ -69,37 +103,82 @@
             iframe.style.width = '100%';
             iframe.style.height = '100vh';
             container.appendChild(iframe);
+            
+            // Deteksi kalo di-block X-Frame-Options
+            let blocked = false;
+            const checkBlock = setTimeout(() => {
+                try {
+                    // Coba akses contentDocument — kalo error berarti di-block
+                    if (iframe.contentDocument === null) { blocked = true; }
+                } catch(e) { blocked = true; }
+                if (blocked) {
+                    iframe.style.display = 'none';
+                    showFallback('🔗', 'Stream ini gak bisa di-embed', 
+                        'Website nya melarang embed. Tapi lo bisa buka langsung di tab baru:');
+                }
+            }, 3000);
+            
+            iframe.onload = () => { clearTimeout(checkBlock); };
         } else if (streamType === 'm3u8') {
             fallback.style.display = 'none';
-            const video = document.createElement('video'); video.controls = true; video.autoplay = true; video.playsInline = true; video.style.width = '100%'; video.style.maxHeight = '85vh';
+            const video = document.createElement('video');
+            video.controls = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.style.width = '100%';
+            video.style.maxHeight = '85vh';
+            video.style.background = '#000';
             container.appendChild(video);
             
             const script = document.createElement('script');
             script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
             script.onload = () => {
-                if (Hls.isSupported()) { const hls = new Hls(); hls.loadSource(decodedUrl); hls.attachMedia(video); hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{})); }
-                else if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = decodedUrl; }
-                else { showFallback(`<div class="big-icon">⚠️</div><h3>Browser tidak support HLS</h3><p>Buka pake VLC:</p><div class="stream-url"><a href="${decodedUrl}" target="_blank">${decodedUrl}</a></div><a href="${decodedUrl}" target="_blank" class="btn">Buka Stream</a>`); }
+                if (Hls.isSupported()) {
+                    const hls = new Hls();
+                    hls.loadSource(decodedUrl);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
+                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    video.src = decodedUrl;
+                } else {
+                    showFallback('⚠️', 'Browser gak support HLS', 'Buka pake VLC atau browser lain:');
+                }
             };
             script.onerror = () => { video.src = decodedUrl; };
             document.head.appendChild(script);
-        } else {
+        } else if (decodedUrl.match(/\.(mp4|webm|ogg)(\?|$)/i)) {
+            // Video langsung
             fallback.style.display = 'none';
-            if (decodedUrl.match(/\.(mp4|webm|ogg)(\?|$)/i)) {
-                const video = document.createElement('video'); video.controls = true; video.autoplay = true; video.playsInline = true; video.style.width = '100%'; video.style.maxHeight = '85vh'; video.src = decodedUrl;
-                container.appendChild(video);
-            } else if (decodedUrl.toLowerCase().includes('youtube.com') || decodedUrl.toLowerCase().includes('youtu.be')) {
-                const iframe = document.createElement('iframe'); iframe.src = decodedUrl; iframe.allow = 'autoplay; encrypted-media; fullscreen'; iframe.allowFullscreen = true; iframe.style.width = '100%'; iframe.style.height = '100vh';
+            const video = document.createElement('video');
+            video.controls = true;
+            video.autoplay = true;
+            video.playsInline = true;
+            video.style.width = '100%';
+            video.style.maxHeight = '85vh';
+            video.style.background = '#000';
+            video.src = decodedUrl;
+            container.appendChild(video);
+        } else {
+            // Web — coba embed
+            try {
+                fallback.style.display = 'none';
+                const iframe = document.createElement('iframe');
+                iframe.src = decodedUrl;
+                iframe.allow = 'autoplay; encrypted-media; fullscreen';
+                iframe.allowFullscreen = true;
+                iframe.style.width = '100%';
+                iframe.style.height = '100vh';
                 container.appendChild(iframe);
-            } else {
-                const iframe = document.createElement('iframe'); iframe.src = decodedUrl; iframe.allow = 'autoplay; encrypted-media; fullscreen'; iframe.allowFullscreen = true; iframe.style.width = '100%'; iframe.style.height = '100vh';
-                container.appendChild(iframe);
-                setTimeout(() => {
-                    try { if (iframe.contentDocument) {} } catch(e) {
+                
+                const checkBlock = setTimeout(() => {
+                    try { if (iframe.contentDocument === null) {} } catch(e) {
                         iframe.style.display = 'none';
-                        showFallback(`<div class="big-icon">🔗</div><h3>Stream tidak bisa di-embed</h3><p>Buka langsung di tab baru:</p><div class="stream-url"><a href="${decodedUrl}" target="_blank">${decodedUrl}</a></div><a href="${decodedUrl}" target="_blank" class="btn">Buka Stream</a> <a href="/" class="btn-outline">Cari Lain</a>`);
+                        showFallback('🔗', 'Gak bisa di-embed', 'Buka langsung aja:');
                     }
-                }, 2000);
+                }, 3000);
+                iframe.onload = () => { clearTimeout(checkBlock); };
+            } catch(e) {
+                showFallback('🔗', 'Gagal', 'Buka langsung:');
             }
         }
     </script>
