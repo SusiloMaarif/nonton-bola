@@ -1,9 +1,10 @@
-// Nonton Bola API — single endpoint buat semua kebutuhan
-// Diakses via /api/proxy?endpoint=matches&q=xxx
+// Nonton Bola API — scraper langsung dari sumber streaming
+// /api/proxy?endpoint=matches&q=tim
+
+const FETCH_TIMEOUT = 12000;
 
 module.exports = async (req, res) => {
   const start = Date.now();
-  
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -12,28 +13,9 @@ module.exports = async (req, res) => {
   const { endpoint, q } = req.query;
 
   try {
-    if (endpoint === 'matches') {
-      return await searchMatches(q || '', res);
-    } else if (endpoint === 'tvri') {
-      return res.json({
-        status: 'ok',
-        stream: {
-          name: 'TVRI Live — Piala Dunia 2026',
-          url: 'https://www.vidio.com/live/6441-tvri',
-          type: 'direct', is_free: true, is_indonesia: true
-        }
-      });
-    } else if (endpoint === 'channels') {
-      return res.json({
-        status: 'ok',
-        channels: [
-          { name: 'FIFA+', url: 'https://www.fifa.com/fifaplus/en/tv-schedule', type: 'direct' },
-          { name: 'YouTube FIFA', url: 'https://www.youtube.com/@FIFAWorldCup', type: 'youtube' }
-        ]
-      });
-    } else {
-      return res.json({ status: 'ok', message: 'Nonton Bola API. Gunakan: /api/proxy?endpoint=matches&q=tim' });
-    }
+    if (endpoint === 'matches') return await searchMatches(q || '', res);
+    if (endpoint === 'channels') return await getChannels(res);
+    return res.json({ status: 'ok', message: 'Nonton Bola API. Gunakan: ?endpoint=matches&q=tim' });
   } catch (e) {
     return res.status(500).json({ status: 'error', message: e.message });
   } finally {
@@ -41,68 +23,108 @@ module.exports = async (req, res) => {
   }
 };
 
-function extractLinks(html) {
+async function fetchText(url, timeout = FETCH_TIMEOUT) {
+  const resp = await fetch(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+    signal: AbortSignal.timeout(timeout)
+  });
+  return resp.text();
+}
+
+function extractLinks(html, baseUrl) {
   const results = [];
-  // Cari semua anchor tags pake metode manual biar ga ribet regex
   const parts = html.split('<a ');
   for (let i = 1; i < parts.length; i++) {
-    const part = parts[i];
-    const hrefMatch = part.match(/href="([^"]*)"/);
-    const textMatch = part.match(/>([^<]*)<\//);
+    const hrefMatch = parts[i].match(/href="([^"]*)"/);
+    const textMatch = parts[i].match(/>([^<]*)<\//);
     if (!hrefMatch || !textMatch) continue;
-    
     const url = hrefMatch[1];
     const text = textMatch[1].trim();
-    if (!text || text.length < 5) continue;
+    if (!text || text.length < 3) continue;
     if (url.match(/\.(css|js|png|jpg|svg|ico|json)$/i)) continue;
-    
-    const fullUrl = url.startsWith('http') ? url : 'https://wc26hub.com' + (url.startsWith('/') ? '' : '/') + url;
-    
+    const fullUrl = url.startsWith('http') ? url : baseUrl + (url.startsWith('/') ? '' : '/') + url;
     results.push({ url: fullUrl, text });
   }
   return results;
 }
 
+async function scrapeWc26Hub() {
+  const results = [];
+  const html = await fetchText('https://wc26hub.com/');
+  const links = extractLinks(html, 'https://wc26hub.com');
+
+  for (const { url, text } of links) {
+    const isRelevant = /(?:vs\.?|world.?cup|match|stream|group|watch|kickoff|soccer|football|bola)/i.test(text + url);
+    if (!isRelevant) continue;
+    const type = url.includes('foxtrend') || url.includes('sportytrend') ? 'iframe' : 'web';
+    results.push({ name: text, url, type, source: 'WC26Hub', category: 'world_cup', is_free: true });
+  }
+
+  // M3U8 links
+  const m3u8Regex = /https?:\/\/[^\s"'<>]+\.m3u8[^\s"'<>]*/gi;
+  let m;
+  while ((m = m3u8Regex.exec(html)) !== null) {
+    results.push({ name: `Stream M3U8 #${results.length + 1}`, url: m[0], type: 'm3u8', source: 'WC26Hub', category: 'world_cup', is_free: true });
+    if (results.length > 60) break;
+  }
+  return results;
+}
+
+async function scrapeFoxTrend() {
+  const results = [];
+  try {
+    const html = await fetchText('https://foxtrend.vip/Soccer', 10000);
+    const links = extractLinks(html, 'https://foxtrend.vip');
+    for (const { url, text } of links) {
+      if (!/(?:vs\.?|match|live|stream|watch|soccer|football)/i.test(text + url)) continue;
+      if (url.match(/\.(css|js|png|jpg|svg|ico)$/i)) continue;
+      results.push({ name: text, url, type: 'iframe', source: 'FoxTrend', category: 'soccer', is_free: true });
+    }
+  } catch (e) { console.log('FoxTrend error:', e.message); }
+  return results;
+}
+
+async function scrapeSportyTrend() {
+  const results = [];
+  try {
+    const html = await fetchText('https://sportytrend.net/Soccer', 10000);
+    const links = extractLinks(html, 'https://sportytrend.net');
+    for (const { url, text } of links) {
+      if (!/(?:vs\.?|match|live|stream|watch|soccer|football)/i.test(text + url)) continue;
+      if (url.match(/\.(css|js|png|jpg|svg|ico)$/i)) continue;
+      results.push({ name: text, url, type: 'iframe', source: 'SportyTrend', category: 'soccer', is_free: true });
+    }
+  } catch (e) { console.log('SportyTrend error:', e.message); }
+  return results;
+}
+
+async function getChannels(res) {
+  return res.json({
+    status: 'ok',
+    channels: [
+      { name: 'TVRI Piala Dunia 2026', url: 'https://www.vidio.com/live/6441-tvri', type: 'direct', is_free: true, is_indonesia: true },
+      { name: 'FIFA+ — Official', url: 'https://www.fifa.com/fifaplus/en/tv-schedule', type: 'direct', is_free: true },
+      { name: 'YouTube FIFA', url: 'https://www.youtube.com/@FIFAWorldCup', type: 'youtube', is_free: true },
+      { name: 'FoxTrend Soccer', url: 'https://foxtrend.vip/Soccer', type: 'iframe', is_free: true },
+      { name: 'SportyTrend Soccer', url: 'https://sportytrend.net/Soccer', type: 'iframe', is_free: true },
+      { name: 'WC26Hub Schedule', url: 'https://wc26hub.com/', type: 'web', is_free: true },
+      { name: 'Soccer Streams 2026', url: 'https://reddit.soccerstreams.net/', type: 'web', is_free: true }
+    ]
+  });
+}
+
 async function searchMatches(query, res) {
   const results = [];
 
-  // Scrape dari WC26Hub
-  try {
-    const resp = await fetch('https://wc26hub.com/', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-      signal: AbortSignal.timeout(12000)
-    });
-    const html = await resp.text();
+  // Scrape dari 3 sumber sekaligus
+  const scrapers = [scrapeWc26Hub(), scrapeFoxTrend(), scrapeSportyTrend()];
+  const scraped = await Promise.allSettled(scrapers);
 
-    // Ekstrak link pertandingan dari HTML
-    const links = extractLinks(html);
-    for (const { url, text } of links) {
-      const isRelevant = /(?:vs\.?|world.?cup|match|stream|group|watch|kickoff|soccer|football|bola)/i.test(text + url);
-      if (!isRelevant) continue;
-      
-      const type = url.includes('foxtrend') || url.includes('sportytrend') ? 'iframe' : 'web';
-      results.push({
-        name: text, url, type,
-        source: 'WC26Hub', category: 'world_cup', is_free: true
-      });
-    }
-
-    // Ekstrak M3U8 links dari seluruh HTML
-    const m3u8Regex = /https?:\/\/[^\s"'<>]+\.m3u8[^\s"'<>]*/gi;
-    let m;
-    while ((m = m3u8Regex.exec(html)) !== null) {
-      results.push({
-        name: `Stream M3U8 #${results.length + 1}`,
-        url: m[0], type: 'm3u8',
-        source: 'WC26Hub', category: 'world_cup', is_free: true
-      });
-      if (results.length > 60) break;
-    }
-  } catch (e) {
-    console.log('WC26Hub scrape error:', e.message);
+  for (const s of scraped) {
+    if (s.status === 'fulfilled') results.push(...s.value);
   }
 
-  // Filter berdasarkan query
+  // Filter query
   let filtered = results;
   if (query) {
     const keywords = query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -114,21 +136,11 @@ async function searchMatches(query, res) {
 
   // Dedup by URL
   const seen = new Set();
-  filtered = filtered.filter(r => {
-    const key = r.url;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  filtered = filtered.filter(r => { const k = r.url; if (seen.has(k)) return false; seen.add(k); return true; });
 
-  // Sort by type priority
-  const prio = { m3u8: 0, direct: 1, iframe: 2, web: 3, youtube: 4 };
+  // Sort: m3u8 > iframe > direct > youtube > web
+  const prio = { m3u8: 0, iframe: 1, direct: 2, youtube: 3, web: 4 };
   filtered.sort((a, b) => (prio[a.type] || 9) - (prio[b.type] || 9));
 
-  return res.json({
-    status: 'ok',
-    count: filtered.length,
-    matches: filtered.slice(0, 50),
-    query
-  });
+  return res.json({ status: 'ok', count: filtered.length, matches: filtered.slice(0, 50), query });
 }
